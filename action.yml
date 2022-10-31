@@ -1,0 +1,42 @@
+name: "Notify PR Open in Slack"
+inputs:
+
+  CHANNEL_ID: 
+    description: "Channel ID"
+  SLACK_BOT_TOKEN:
+    description: "Slack bot token"
+runs:
+  using: "composite"
+  steps:
+    - name: Notify to Slack channel
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: ${{ inputs.CHANNEL_ID}}
+        payload: |
+          {
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*{{ steps.api_health.outputs.api_health }}*"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Title:*\n ${{ github.event.pull_request.title }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Check here:*\n ${{ github.event.pull_request.html_url }}"
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN}}
+
