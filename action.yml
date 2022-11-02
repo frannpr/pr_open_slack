@@ -1,10 +1,12 @@
 name: "Notify PR Open in Slack"
 inputs:
-
   CHANNEL_ID: 
     description: "Channel ID"
-  SLACK_BOT_TOKEN:
+  BOT_TOKEN_GITHUB:
     description: "Slack bot token"
+  TEAM_BACK_NAME:
+    description: "Slack bot token"
+  
 runs:
   using: "composite"
   steps:
@@ -19,7 +21,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*{{ steps.api_health.outputs.api_health }}*"
+                  "text": "*New PR :pr_open: ${{ inputs.TEAM_BACK_NAME}} by ${{ github.event.pull_request.user.login }}*"
                 }
               },
               {
@@ -32,11 +34,19 @@ runs:
                   {
                     "type": "mrkdwn",
                     "text": "*Check here:*\n ${{ github.event.pull_request.html_url }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*From*\n ${{ github.event.pull_request.head.ref }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*To*\n ${{ github.event.pull_request.base.ref }}"
                   }
                 ]
               }
             ]
           }
       env:
-        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN}}
+        SLACK_BOT_TOKEN: ${{ inputs.BOT_TOKEN_GITHUB}}
 
