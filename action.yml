@@ -21,7 +21,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*New PR :pr_open: ${{ inputs.TEAM_BACK_NAME}} by ${{ github.event.pull_request.user.login }}*"
+                  "text": "*:pr_open: Review required ${{ inputs.TEAM_BACK_NAME}} by ${{ github.event.pull_request.user.login }}*"
                 }
               },
               {
@@ -34,14 +34,6 @@ runs:
                   {
                     "type": "mrkdwn",
                     "text": "*Check here:*\n ${{ github.event.pull_request.html_url }}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*From*\n ${{ github.event.pull_request.head.ref }}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*To*\n ${{ github.event.pull_request.base.ref }}"
                   }
                 ]
               }
