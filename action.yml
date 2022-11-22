@@ -4,7 +4,7 @@ inputs:
     description: "Channel ID"
   BOT_TOKEN_GITHUB:
     description: "Slack bot token"
-  TEAM_BACK_NAME:
+  TEAM_NAME:
     description: "Slack bot token"
   
 runs:
@@ -21,7 +21,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*:pr_open: Review required @${{ inputs.TEAM_BACK_NAME}} by ${{ github.event.pull_request.user.login }}*"
+                  "text": "*:pr_open: Review required @${{ inputs.TEAM_NAME}} by ${{ github.event.pull_request.user.login }}*"
                 }
               },
               {
