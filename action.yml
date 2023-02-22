@@ -6,6 +6,8 @@ inputs:
     description: "Slack bot token"
   TEAM_NAME:
     description: "Slack bot token"
+  GITHUB_TOKEN:
+    description: "Github token generated"
 
 outputs:
   GITHUB_MERGED_TITLE:
@@ -68,7 +70,7 @@ runs:
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       id: github_merged_url
       run: |
-        github_merged_title=$(git log --merges --pretty=format:"%b" ${{ github.sha }} | sed -n "s|.*\(\(http\|https\):\/\/.*\/pull\/[0-9]*\).*|\1|p")
+        github_merged_url=$(git log --merges --pretty=format:"%b" ${{ github.sha }} | sed -n "s|.*\(\(http\|https\):\/\/.*\/pull\/[0-9]*\).*|\1|p")
         echo "github_merged_url=$github_merged_url" >> $GITHUB_OUTPUT
       shell: bash
 
