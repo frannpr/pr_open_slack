@@ -12,6 +12,7 @@ runs:
   using: "composite"
   steps:
     - name: Notify to Slack channel
+      if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
       uses: slackapi/slack-github-action@v1.23.0
       id: notify_slack
       with:
