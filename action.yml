@@ -11,6 +11,8 @@ runs:
   using: "composite"
   steps:
     - name: Notify to Slack channel
+      id: slack
+      if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ inputs.CHANNEL_ID}}
@@ -48,6 +50,7 @@ runs:
         SLACK_BOT_TOKEN: ${{ inputs.BOT_TOKEN_GITHUB}}
 
     - name: Notify to Slack channel
+      if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ inputs.CHANNEL_ID}}
