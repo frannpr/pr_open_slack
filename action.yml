@@ -61,6 +61,7 @@ runs:
       id: get_slack_messages
 
     - name: Find original message
+      shell: bash
       if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.get_slack_messages.outputs.result != '[]' }}
       id: find_message
       run: |
