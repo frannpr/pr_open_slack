@@ -6,7 +6,11 @@ inputs:
     description: "Slack bot token"
   TEAM_NAME:
     description: "Slack bot token"
-  
+
+outputs:
+  GITHUB_MERGED_TITLE:
+    description: "Github merged title"
+    value: ${{ steps.github_merged_title.outputs.github_merged_title }}
 runs:
   using: "composite"
   steps:
@@ -49,6 +53,21 @@ runs:
       env:
         SLACK_BOT_TOKEN: ${{ inputs.BOT_TOKEN_GITHUB}}
 
+    - name: Get merged title
+      id: github_merged_title
+      run: |
+        github_merged_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }})
+        echo "github_merged_title=$github_merged_title" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Get merged url
+      id: github_merged_url
+      run: |
+        github_merged_title=$($ git log --merges --pretty=format:"%b" ${{ github.sha }} | sed -n "s|.*\(\(http\|https\):\/\/.*\/pull\/[0-9]*\).*|\1|p")
+        echo "github_merged_url=$github_merged_url" >> $GITHUB_OUTPUT
+      shell: bash
+
+
     - name: Notify to Slack channel
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       uses: slackapi/slack-github-action@v1.23.0
@@ -69,7 +88,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*${{ github.event.pull_request.title }}*"
+                  "text": "*${{ steps.github_merged_title.outputs.github_merged_title }}*"
                 },
                 "accessory": {
                   "type": "button",
@@ -79,7 +98,7 @@ runs:
                     "emoji": true
                   },
                   "value": "review_here",
-                  "url": "${{ github.event.pull_request.html_url }}",
+                  "url": "${{ steps.github_merged_title.outputs.github_merged_title }}",
                   "action_id": "button-action"
                 }
               }
