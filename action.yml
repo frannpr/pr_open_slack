@@ -57,7 +57,8 @@ runs:
           }
       env:
         SLACK_BOT_TOKEN: ${{ inputs.BOT_TOKEN_GITHUB}}
-
+    
+    - uses: actions/checkout@v3
     - name: Get merged title
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       id: github_merged_title
