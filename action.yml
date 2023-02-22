@@ -93,7 +93,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*:varita_mágica: :merged: ${{ steps.github_merged_title.outputs.github_merged_title }}:merged: :varita_mágica:*"
+                  "text": "*:magic_wand: :merged: ${{ steps.github_merged_title.outputs.github_merged_title }}:merged: :magic_wand:*"
                 },
                 "accessory": {
                   "type": "button",
