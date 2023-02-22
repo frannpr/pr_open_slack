@@ -71,7 +71,9 @@ runs:
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       id: github_merged_url
       run: |
-        github_merged_url=$(git log --merges --pretty=format:"%b" ${{ github.sha }} | sed -n "s|.*\(\(http\|https\):\/\/.*\/pull\/[0-9]*\).*|\1|p")
+        github_merged_url=$(      id: pr
+      run: |
+        PR_URL=$(curl -s "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?state=closed" | jq -r '.[0].html_url'))
         echo "github_merged_url=$github_merged_url" >> $GITHUB_OUTPUT
       shell: bash
 
@@ -106,7 +108,7 @@ runs:
                     "emoji": true
                   },
                   "value": "review_here",
-                  "url": "${{ steps.github_merged_title.outputs.github_merged_title }}",
+                  "url": "${{ steps.github_merged_url.outputs.github_merged_url }}",
                   "action_id": "button-action"
                 }
               }
