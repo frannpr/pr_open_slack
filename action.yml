@@ -39,7 +39,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*${{ github.event.pull_request.title }}*"
+                  "text": "*:pencil: ${{ github.event.pull_request.title }}*"
                 },
                 "accessory": {
                   "type": "button",
@@ -93,20 +93,13 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*:merged: Pull request has been merged @${{ inputs.TEAM_NAME}} by ${{ github.event.pull_request.user.login }}*"
-                }
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*${{ steps.github_merged_title.outputs.github_merged_title }}*"
+                  "text": "*:varita_mágica: :merged: ${{ steps.github_merged_title.outputs.github_merged_title }}:merged: :varita_mágica:*"
                 },
                 "accessory": {
                   "type": "button",
                   "text": {
                     "type": "plain_text",
-                    "text": "Check here",
+                    "text": "See more",
                     "emoji": true
                   },
                   "value": "review_here",
