@@ -51,7 +51,7 @@ runs:
         SLACK_BOT_TOKEN: ${{ inputs.BOT_TOKEN_GITHUB }}
 
     - name: Add reaction to Slack message
-      if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.get_slack_messages.outputs.result != '[]'
+      if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.get_slack_messages.outputs.result != '[]' }}
       uses: slack/web-api@v1
       with:
         slack-bot-token: ${{ inputs.BOT_TOKEN_GITHUB }}
@@ -59,8 +59,9 @@ runs:
         channel: ${{ inputs.CHANNEL_ID }}
         limit: 100
       id: get_slack_messages
+
     - name: Find original message
-      if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.get_slack_messages.outputs.result != '[]'
+      if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.get_slack_messages.outputs.result != '[]' }}
       id: find_message
       run: |
         for message in ${{ fromJson(steps.get_slack_messages.outputs.result).messages }}; do
@@ -69,9 +70,9 @@ runs:
             break
           fi
         done
-      if: steps.get_slack_messages.outputs.result != '[]'
+
     - name: Add reaction to Slack message
-      if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.get_slack_messages.outputs.result != '[]'
+      if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.get_slack_messages.outputs.result != '[]' }}
       uses: slack/web-api@v1
       with:
         slack-bot-token: ${{ inputs.BOT_TOKEN_GITHUB }}
@@ -79,4 +80,3 @@ runs:
         name: merged
         channel: ${{ inputs.CHANNEL_ID }}
         timestamp: ${{ steps.find_message.outputs.ts }}
-      if: steps.get_slack_messages.outputs.result != '[]'
