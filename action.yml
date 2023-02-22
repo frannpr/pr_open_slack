@@ -1,4 +1,5 @@
 name: "Notify PR Open in Slack"
+description: "Notify action for send slacks messages about when a PR is open or closed."
 inputs:
   CHANNEL_ID: 
     description: "Channel ID"
