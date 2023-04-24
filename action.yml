@@ -22,7 +22,7 @@ runs:
   steps:
     - name: Notify to Slack channel
       id: slack
-      if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
+      if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && !github.event.pull_request.draft }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ inputs.CHANNEL_ID}}
@@ -64,7 +64,7 @@ runs:
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       id: github_merged_title
       run: |
-        github_merged_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }})
+        github_merged_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }} | cut -d' ' -f5- | xargs basename -s '/' | tail -1)
         echo "github_merged_title=$github_merged_title" >> $GITHUB_OUTPUT
       shell: bash
 
@@ -94,7 +94,14 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*:magic_wand: :merged: ${{ steps.github_merged_title.outputs.github_merged_title }}:merged: :magic_wand:*"
+                  "text": "*:merged: ${{ steps.github_merged_title.outputs.github_merged_title }}*"
+                }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*:bust_in_silhouette: ${{ github.event.pull_request.user.login }}*"
                 },
                 "accessory": {
                   "type": "button",
@@ -103,7 +110,7 @@ runs:
                     "text": "See more",
                     "emoji": true
                   },
-                  "value": "review_here",
+                  "value": "See more",
                   "url": "${{ steps.github_merged_url.outputs.github_merged_url }}",
                   "action_id": "button-action"
                 }
