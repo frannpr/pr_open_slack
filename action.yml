@@ -77,6 +77,7 @@ runs:
       run: |
         github_author=$(git log --format="%an" -n 1 ${{ github.sha }})
         echo "github_author=$github_author" >> $GITHUB_OUTPUT
+      shell: bash
     - name: Get merged url
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       id: github_merged_url
