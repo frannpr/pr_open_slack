@@ -17,6 +17,9 @@ outputs:
   GITHUB_MERGED_URL:
     description: "Github merged URL"
     value: ${{ steps.github_merged_url.outputs.github_merged_url }}
+  GITHUB_AUTHOR:
+    description: "Github author"
+    value: ${{ steps.github_author.outputs.github_author }}
 runs:
   using: "composite"
   steps:
@@ -68,6 +71,12 @@ runs:
         echo "github_merged_title=$github_merged_title" >> $GITHUB_OUTPUT
       shell: bash
 
+    - name: Get Author
+      if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
+      id: github_author
+      run: |
+        github_author=$(git log --format="%an" -n 1 ${{ github.sha }})
+        echo "github_author=$github_author" >> $GITHUB_OUTPUT
     - name: Get merged url
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       id: github_merged_url
@@ -101,7 +110,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*:bust_in_silhouette: ${{ github.event.pull_request.user.login }}*"
+                  "text": "*:bust_in_silhouette: ${{ steps.github_author.outputs.github_author }}*"
                 },
                 "accessory": {
                   "type": "button",
