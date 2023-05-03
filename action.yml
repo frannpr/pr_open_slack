@@ -67,7 +67,11 @@ runs:
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       id: github_merged_title
       run: |
-        github_merged_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }} | cut -d' ' -f5- | xargs basename -s '/' | tail -1)
+        if git log -n 1 --pretty=format:"%s" ${{ github.sha }} | grep -q "/"; then
+          github_merged_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }} | cut -d' ' -f5- | xargs basename -s '/' | tail -1)
+        else
+          github_merged_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }})
+        fi
         echo "github_merged_title=$github_merged_title" >> $GITHUB_OUTPUT
       shell: bash
 
