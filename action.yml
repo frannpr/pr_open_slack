@@ -1,34 +1,30 @@
-name: "Notify PR Open in Slack"
-description: "Notify action for send slacks messages about when a PR is open or closed."
-inputs:
-  CHANNEL_ID: 
-    description: "Channel ID"
-  BOT_TOKEN_GITHUB:
-    description: "Slack bot token"
-  TEAM_NAME:
-    description: "Slack bot token"
-  GITHUB_TOKEN:
-    description: "Github token generated"
+name: "Notify PR Open & Push to Main Branches in Slack"
+description: "Notifies on Slack when a PR is opened (non-draft) or when code is pushed to develop, staging, or main branches."
 
-outputs:
-  GITHUB_MERGED_TITLE:
-    description: "Github merged title"
-    value: ${{ steps.github_merged_title.outputs.github_merged_title }}
-  GITHUB_MERGED_URL:
-    description: "Github merged URL"
-    value: ${{ steps.github_merged_url.outputs.github_merged_url }}
-  GITHUB_AUTHOR:
-    description: "Github author"
-    value: ${{ steps.github_author.outputs.github_author }}
+inputs:
+  CHANNEL_ID:
+    description: "Slack Channel ID where notifications will be sent."
+    required: true
+  SLACK_BOT_TOKEN: # Rename of BOT_TOKEN_GITHUB 
+    description: "Slack Bot Token with permissions to post messages."
+    required: true
+  TEAM_NAME:
+    description: "Optional Slack team/group handle (@team-name) to mention on new PRs."
+    required: false
+  GITHUB_TOKEN:
+    description: "GitHub Token needed to interact with the GitHub API (e.g., fetch PR details)."
+    required: true
+
 runs:
   using: "composite"
   steps:
-    - name: Notify to Slack channel
-      id: slack
+    - name: Notify PR Opened to Slack
+      id: slack_pr_opened
+      # Only if PR is not draft
       if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && !github.event.pull_request.draft }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
-        channel-id: ${{ inputs.CHANNEL_ID}}
+        channel-id: ${{ inputs.CHANNEL_ID }}
         payload: |
           {
             "blocks": [
@@ -36,7 +32,7 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*:pr_open: Review required @${{ inputs.TEAM_NAME}} by ${{ github.event.pull_request.user.login }}*"
+                  "text": "*:pr_open: Review required${{ inputs.TEAM_NAME && format(' @{0}', inputs.TEAM_NAME) || '' }} by ${{ github.event.pull_request.user.login }}*"
                 }
               },
               {
@@ -52,55 +48,60 @@ runs:
                     "text": "Review here",
                     "emoji": true
                   },
-                  "value": "review_here",
                   "url": "${{ github.event.pull_request.html_url }}",
-                  "action_id": "button-action"
+                  "action_id": "button-review-pr"
                 }
               }
             ]
           }
       env:
-        SLACK_BOT_TOKEN: ${{ inputs.BOT_TOKEN_GITHUB}}
-    
-    - uses: actions/checkout@v3
-    - name: Get merged title
+        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
+
+
+    - name: Checkout code
+      id: checkout_code
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
-      id: github_merged_title
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+
+    - name: Get Commit Info
+      id: get_commit_info
+      if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       run: |
-        if git log -n 1 --pretty=format:"%s" ${{ github.sha }} | grep -q "/"; then
-          github_merged_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }} | cut -d' ' -f5- | xargs basename -s '/' | tail -1)
+        commit_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }})
+        commit_author=$(git log -n 1 --pretty=format:"%an" ${{ github.sha }})
+        echo "commit_title=$commit_title" >> $GITHUB_OUTPUT
+        echo "commit_author=$commit_author" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Get Associated PR Info
+      id: get_pr_info
+      if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
+      run: |
+        PR_INFO_JSON=$(curl -sfL \
+          -H "Accept: application/vnd.github.groot-preview+json" \
+          -H "Authorization: Bearer ${{ inputs.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls")
+
+        PR_URL=$(echo "$PR_INFO_JSON" | jq -r '.[0].html_url // empty')
+
+        if [[ -z "$PR_URL" ]]; then
+          echo "No associated PR found for commit ${{ github.sha }}"
+          PR_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
         else
-          github_merged_title=$(git log -n 1 --pretty=format:"%s" ${{ github.sha }})
+           PR_URL="${PR_URL}/files"
         fi
-        echo "github_merged_title=$github_merged_title" >> $GITHUB_OUTPUT
+
+        echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
       shell: bash
 
-    - name: Get Author
-      if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
-      id: github_author
-      run: |
-        github_author=$(git log --format="%an" -n 1 ${{ github.sha }})
-        echo "github_author=$github_author" >> $GITHUB_OUTPUT
-      shell: bash
-    - name: Get merged url
-      if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
-      id: github_merged_url
-      run: |
-        github_merged_url=$(curl \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ inputs.GITHUB_TOKEN }}"\
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/repos/$GITHUB_REPOSITORY/pulls\?state\=closed | jq -r '.[0].html_url'| xargs printf "%s/files\n")
-        echo "github_merged_url=$github_merged_url" >> $GITHUB_OUTPUT
-      shell: bash
-
-
-    - name: Notify to Slack channel
+    - name: Notify Push/Merge to Slack
+      id: slack_push_notify
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
-        channel-id: ${{ inputs.CHANNEL_ID}}
-        update-ts: ${{ steps.slack.outputs.ts }}
+        channel-id: ${{ inputs.CHANNEL_ID }}
         payload: |
           {
             "blocks": [
@@ -108,28 +109,28 @@ runs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*:merged: ${{ steps.github_merged_title.outputs.github_merged_title }}*"
+                  "text": "*:merged: Merged to ${{ github.ref_name }}:* ${{ steps.get_commit_info.outputs.commit_title }}"
                 }
               },
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*:bust_in_silhouette: ${{ steps.github_author.outputs.github_author }}*"
+                  "text": "*:bust_in_silhouette: By:* ${{ steps.get_commit_info.outputs.commit_author }}"
                 },
                 "accessory": {
                   "type": "button",
                   "text": {
                     "type": "plain_text",
-                    "text": "See more",
+                    "text": "See Changes",
                     "emoji": true
                   },
-                  "value": "See more",
-                  "url": "${{ steps.github_merged_url.outputs.github_merged_url }}",
-                  "action_id": "button-action"
+                  # Usa la URL del PR encontrado (o la del commit si no se encontró PR)
+                  "url": "${{ steps.get_pr_info.outputs.pr_url }}",
+                  "action_id": "button-see-changes"
                 }
               }
             ]
           }
       env:
-        SLACK_BOT_TOKEN: ${{ inputs.BOT_TOKEN_GITHUB}}
+        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
