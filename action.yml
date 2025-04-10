@@ -57,7 +57,6 @@ runs:
       env:
         SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
 
-
     - name: Checkout code
       id: checkout_code
       if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
@@ -76,31 +75,31 @@ runs:
       shell: bash
 
     - name: Get Associated PR Info
-          id: get_pr_info
-          if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
-          run: |
-            PR_INFO_JSON=$(curl -sL \
-              -H "Accept: application/vnd.github.groot-preview+json" \
-              -H "Authorization: Bearer ${{ inputs.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls")
+      id: get_pr_info
+      if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main') }}
+      run: |
+        PR_INFO_JSON=$(curl -sL \
+          -H "Accept: application/vnd.github.groot-preview+json" \
+          -H "Authorization: Bearer ${{ inputs.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls")
 
-            if [[ $PR_INFO_JSON == \[* ]]; then
-              PR_URL=$(echo "$PR_INFO_JSON" | jq -r '.[0].html_url // empty')
-            else
-              echo "Warning: Could not retrieve valid PR info from API for commit ${{ github.sha }}. Response: $PR_INFO_JSON"
-              PR_URL=""
-            fi
+        if [[ $PR_INFO_JSON == \[* ]]; then
+          PR_URL=$(echo "$PR_INFO_JSON" | jq -r '.[0].html_url // empty')
+        else
+          echo "Warning: Could not retrieve valid PR info from API for commit ${{ github.sha }}. Response: $PR_INFO_JSON"
+          PR_URL=""
+        fi
 
-            if [[ -z "$PR_URL" ]]; then
-              echo "No associated PR found or API error for commit ${{ github.sha }}. Falling back to commit URL."
-              PR_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-            else
-              PR_URL="${PR_URL}/files"
-              echo "Associated PR found: $PR_URL"
-            fi
+        if [[ -z "$PR_URL" ]]; then
+          echo "No associated PR found or API error for commit ${{ github.sha }}. Falling back to commit URL."
+          PR_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+        else
+          PR_URL="${PR_URL}/files"
+          echo "Associated PR found: $PR_URL"
+        fi
 
-            echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
-          shell: bash
+        echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Notify Push/Merge to Slack
       id: slack_push_notify
@@ -131,7 +130,6 @@ runs:
                     "text": "See Changes",
                     "emoji": true
                   },
-                  # Usa la URL del PR encontrado (o la del commit si no se encontró PR)
                   "url": "${{ steps.get_pr_info.outputs.pr_url }}",
                   "action_id": "button-see-changes"
                 }
